@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red Ball 4 Studio - Modding Tool Suite</title>
+  <style>
+    body { font-family: sans-serif; background: #121212; color: #fff; padding: 12px; margin: 0; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+    .top-bar h3 { margin: 0; color: #00e676; }
+    .lang-select { background: #111; color: #00e676; border: 1px solid #00e676; padding: 4px 8px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    .box { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #333; }
+    .box-title { color: #00e676; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+    .controls-row { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+    .controls-row label { font-size: 0.85rem; font-weight: bold; color: #00e676; white-space: nowrap; }
+    .controls-row input, .controls-row select { background: #111; color: #fff; border: 1px solid #444; padding: 6px; border-radius: 4px; font-weight: bold; width: 100%; box-sizing: border-box; }
+    #gallery, #editor-gallery { display: flex; flex-wrap: wrap; gap: 8px; max-height: 45vh; overflow-y: auto; background: #111; padding: 8px; border-radius: 6px; border: 1px solid #333; }
+    .card { border: 2px solid #444; background: transparent; width: 85px; height: 95px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; border-radius: 4px; position: relative; cursor: pointer; user-select: none; padding: 2px; box-sizing: border-box; }
+    .card.selected { border-color: #00e676; background: rgba(0,230,118,0.25); }
+    .card-canvas-box { width: 100%; height: 65px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .card canvas { max-width: 100%; max-height: 100%; }
+    .card-name { font-size: 0.55rem; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; }
+    .badge { position: absolute; top: 1px; right: 1px; background: #00e676; color: #000; font-size: 0.7rem; font-weight: bold; border-radius: 50%; width: 18px; height: 18px; display: flex; justify-content: center; align-items: center; pointer-events: none; z-index: 6; }
+    .btn-rotate { position: absolute; top: 1px; left: 1px; background: #111; color: #00e676; border: 1px solid #00e676; font-size: 0.65rem; border-radius: 3px; width: 18px; height: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 5; }
+    .btn-rotate:hover { background: #00e676; color: #000; }
+    #seq { display: flex; gap: 6px; overflow-x: auto; background: #000; padding: 6px; min-height: 55px; border-radius: 6px; border: 1px solid #333; }
+    .seq-item { display: flex; flex-direction: column; align-items: center; }
+    .seq-item canvas { height: 40px; border: 1px solid #555; }
+    .seq-item span { font-size: 0.55rem; color: #00e676; max-width: 50px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    button { background: #00e676; color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; width: 100%; cursor: pointer; }
+    .btn-secondary { background: #333; color: #00e676; border: 1px solid #00e676; margin-top: 5px; }
+    .btn-secondary:hover { background: #00e676; color: #000; }
+    .btn-del { background: #ff5252; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; float: right; cursor: pointer; }
+    #preview-area, #mask-result-area, #builder-result-area, #editor-result-area { text-align: center; margin-top: 15px; }
+    input[type="file"] { margin-bottom: 6px; font-size: 0.85rem; width: 100%; box-sizing: border-box; }
+    .file-group { margin-bottom: 8px; }
+    .file-group label { display: block; font-size: 0.8rem; color: #00e676; margin-bottom: 3px; }
+    .slider-container { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 4px; }
+    .slider-container input[type="range"] { flex: 1; -webkit-appearance: none; background: #444; height: 6px; border-radius: 3px; }
+    .slider-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #00e676; cursor: pointer; }
+    .emotion-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 8px; }
+    .emotion-card { background: #111; padding: 8px; border-radius: 6px; border: 1px solid #333; }
+    .emotion-card label { display: block; font-size: 0.75rem; font-weight: bold; color: #00e676; margin-bottom: 4px; word-break: break-all; }
+    .mode-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+    .mode-tab { flex: 1; background: #111; color: #aaa; padding: 8px; text-align: center; border-radius: 4px; cursor: pointer; border: 1px solid #333; font-weight: bold; font-size: 0.85rem; }
+    .mode-tab.active { background: #00e676; color: #000; border-color: #00e676; }
+    .color-picker-box { background: #181818; border: 1px dashed #444; padding: 8px; border-radius: 6px; margin-top: 8px; }
+    .color-swatch { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #fff; display: inline-block; cursor: pointer; margin-right: 4px; vertical-align: middle; }
+    .recolor-row { display: flex; gap: 6px; align-items: center; margin-top: 4px; background: #111; padding: 4px; border-radius: 4px; }
+    .recolor-row input[type="color"] { border: none; width: 28px; height: 28px; cursor: pointer; background: transparent; padding: 0; }
+    .btn-eye { background: #111; color: #00e676; border: 1px solid #00e676; padding: 2px 6px; font-size: 0.75rem; border-radius: 3px; cursor: pointer; }
+    .editor-card { background: #181818; border: 1px solid #444; border-radius: 6px; padding: 6px; width: 120px; text-align: center; position: relative; }
+    .editor-card-title { font-size: 0.65rem; color: #00e676; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+    .editor-card-canvas-box { width: 100px; height: 100px; background: #000; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid #333; position: relative; }
+    .editor-card-canvas-box canvas { max-width: 100%; max-height: 100%; }
+    .editor-card-controls { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .editor-card-controls input[type="file"] { font-size: 0.65rem; margin: 0; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <h3>Red Ball 4 Studio Suite</h3>
+    <div>
+      <select id="langSelect" class="lang-select" onchange="changeLanguage(this.value)">
+        <option value="en" selected>English</option>
+        <option value="es">Español</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- TOOL 1 -->
+  <div class="box">
+    <div class="box-title" data-i18n="t1_title">1. Animated GIF Creator</div>
+    
+    <div class="file-group">
+      <label data-i18n="sheet_img_label">1. Spritesheet Image (*Required):</label>
+      <input type="file" id="up" accept="image/*">
+    </div>
+
+    <div class="file-group">
+      <label data-i18n="plist_opt_label">2. Plist Data File (Optional - Maps Frame Names):</label>
+      <input type="file" id="t1Plist" accept=".plist,.xml" onchange="handleT1PlistLoaded()">
+    </div>
+
+    <div class="controls-row">
+      <label for="fpsInput" data-i18n="fps_label">Speed (FPS):</label>
+      <input type="number" id="fpsInput" value="12" min="1" max="30">
+    </div>
+    <div id="status" style="font-size:0.8rem; color:#aaa; margin-top:6px;" data-i18n="upload_status">Upload your .png or .webp file</div>
+
+    <div style="margin-top:10px;">
+      <strong data-i18n="isolated_sprites">Isolated Sprites:</strong>
+      <div id="gallery"></div>
+    </div>
+
+    <div style="margin-top: 12px;">
+      <strong data-i18n="chosen_seq">Chosen Sequence:</strong>
+      <button class="btn-del" onclick="clearAll()" data-i18n="clear_btn">Clear</button>
+      <div id="seq" style="margin-top:6px;"></div>
+    </div>
+
+    <div style="margin-top: 12px;">
+      <button onclick="generateValidGIF()" data-i18n="download_gif_btn">DOWNLOAD TRANSPARENT GIF</button>
+    </div>
+    <div id="preview-area"><div id="result"></div></div>
+  </div>
+
+  <!-- TOOL 2 -->
+  <div class="box">
+    <div class="box-title" data-i18n="t2_title">2. Advanced Plist Texturizer</div>
+    
+    <div class="file-group">
+      <label data-i18n="plist_req">1. SpriteSheet .Plist File (*Required):</label>
+      <input type="file" id="plistFile" accept=".plist,.xml">
+    </div>
+    <div class="file-group">
+      <label data-i18n="sheet_req">2. Base Original Spritesheet (*Required):</label>
+      <input type="file" id="maskSheetImg" accept="image/*" onchange="loadBaseSheetForPicking(this, 't2')">
+    </div>
+    <div class="file-group">
+      <label data-i18n="tex_req">3. Custom Texture Image (*Required):</label>
+      <input type="file" id="maskTextureImg" accept="image/*">
+    </div>
+    <div class="file-group">
+      <label data-i18n="faces_opt">4. PNG Faces/Overlay Layer (Optional):</label>
+      <input type="file" id="facesOverlayImg" accept="image/*">
+    </div>
+
+    <div class="controls-row">
+      <div style="flex:1;">
+        <label for="textureMode" data-i18n="tex_mode">Texture Mode:</label>
+        <select id="textureMode" onchange="toggleBlendOptions()">
+          <option value="clip" selected data-i18n="mode_clip">Pure Clipping (Silhouette Without Color Blend)</option>
+          <option value="blend" data-i18n="mode_blend">Overlay / Blend (With Fusion)</option>
+          <option value="overlay_pure" data-i18n="mode_overlay">Pure Overlay (Lights/Shadows Without Blend)</option>
+          <option value="replace" data-i18n="mode_replace">Total Replacement (Clears Base and Applies Texture)</option>
+        </select>
+      </div>
+
+      <div style="flex:1; display:none;" id="blendModeContainer">
+        <label for="blendMode" data-i18n="blend_mode">Blend Mode:</label>
+        <select id="blendMode">
+          <option value="overlay" selected>Overlay</option>
+          <option value="soft-light">Soft Light</option>
+          <option value="multiply">Multiply</option>
+          <option value="screen">Screen</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- COLOR EXCLUSION TOOL -->
+    <div class="color-picker-box">
+      <label style="font-size:0.85rem; font-weight:bold; color:#00e676;" data-i18n="exclude_colors_title">Color Exclusion (Protect from Texture):</label>
+      <button class="btn-secondary" onclick="toggleEyedropper('exclusion')" data-i18n="pick_color_btn">Pick Exclusion Color from Base Sheet</button>
+      <div id="excluded-colors-list" style="margin-top:6px;"></div>
+      
+      <div style="margin-top:8px;">
+        <label for="exclusionTolRange" style="font-size:0.75rem; color:#aaa;" data-i18n="exclude_tol_label">Exclusion Tolerance: <span id="exclusionTolVal" style="color:#00e676;">25</span></label>
+        <div class="slider-container">
+          <input type="range" id="exclusionTolRange" min="0" max="100" value="25" oninput="document.getElementById('exclusionTolVal').innerText = this.value">
+        </div>
+      </div>
+    </div>
+
+    <!-- RECOLOR TOOL TOOL 2 -->
+    <div class="color-picker-box">
+      <label style="font-size:0.85rem; font-weight:bold; color:#00e676;" data-i18n="recolor_title">Palette Recolor (Boss / Sprite):</label>
+      <button class="btn-secondary" onclick="addRecolorRow('recolor-container-t2', 't2')" data-i18n="add_recolor_btn">+ Add Color Swap</button>
+      <div id="recolor-container-t2"></div>
+      
+      <div style="margin-top:8px;">
+        <label for="recolorTolT2Range" style="font-size:0.75rem; color:#aaa;" data-i18n="recolor_tol_label">Recolor Tolerance: <span id="recolorTolT2Val" style="color:#00e676;">25</span></label>
+        <div class="slider-container">
+          <input type="range" id="recolorTolT2Range" min="0" max="100" value="25" oninput="document.getElementById('recolorTolT2Val').innerText = this.value">
+        </div>
+      </div>
+    </div>
+
+    <div class="controls-row" id="autoDetectionContainer" style="margin-top:12px;">
+      <label for="toleranceRange" data-i18n="tol_label">Face Protection Tolerance: <span id="tolValue" style="color:#00e676;">25%</span></label>
+      <div class="slider-container">
+        <input type="range" id="toleranceRange" min="0" max="100" value="25" oninput="document.getElementById('tolValue').innerText = this.value + '%'">
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button onclick="applySmartTextureWithPlist()" data-i18n="apply_tex_btn">APPLY TEXTURE TO SPRITESHEET</button>
+    </div>
+
+    <div id="mask-result-area"></div>
+  </div>
+
+  <!-- TOOL 3 -->
+  <div class="box">
+    <div class="box-title" data-i18n="t3_title">3. Spritesheet Assembler by Plist</div>
+    
+    <div class="file-group">
+      <label data-i18n="struct_plist">1. Structure .Plist File (*Required):</label>
+      <input type="file" id="builderPlistFile" accept=".plist,.xml" onchange="handleBuilderPlistLoaded()">
+    </div>
+
+    <div class="file-group">
+      <label data-i18n="base_sheet_opt">2. Base / Background Spritesheet (Optional):</label>
+      <input type="file" id="builderBaseSheet" accept="image/*" onchange="loadBaseSheetForPicking(this, 't3')">
+    </div>
+
+    <!-- RECOLOR TOOL TOOL 3 -->
+    <div class="color-picker-box">
+      <label style="font-size:0.85rem; font-weight:bold; color:#00e676;" data-i18n="recolor_title">Palette Recolor (Boss / Sprite):</label>
+      <button class="btn-secondary" onclick="addRecolorRow('recolor-container-t3', 't3')" data-i18n="add_recolor_btn">+ Add Color Swap</button>
+      <div id="recolor-container-t3"></div>
+      
+      <div style="margin-top:8px;">
+        <label for="recolorTolT3Range" style="font-size:0.75rem; color:#aaa;" data-i18n="recolor_tol_label">Recolor Tolerance: <span id="recolorTolT3Val" style="color:#00e676;">25</span></label>
+        <div class="slider-container">
+          <input type="range" id="recolorTolT3Range" min="0" max="100" value="25" oninput="document.getElementById('recolorTolT3Val').innerText = this.value">
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 12px;">
+      <div class="mode-tabs">
+        <div id="tab-auto" class="mode-tab active" onclick="switchBuilderMode('auto')" data-i18n="tab_auto">Auto (By Emotions)</div>
+        <div id="tab-advanced" class="mode-tab" onclick="switchBuilderMode('advanced')" data-i18n="tab_adv">Advanced (Frame by Frame)</div>
+      </div>
+    </div>
+
+    <!-- AUTO PANEL -->
+    <div id="builder-auto-panel" style="margin-top: 10px;">
+      <label style="font-size:0.85rem; font-weight:bold; color:#00e676;" data-i18n="emo_files_label">Emotion PNG Files:</label>
+      <div class="emotion-grid">
+        <div class="emotion-card"><label for="emo_base">1. Base (Normal)</label><input type="file" id="emo_base" accept="image/*"></div>
+        <div class="emotion-card"><label for="emo_angry">2. Angry</label><input type="file" id="emo_angry" accept="image/*"></div>
+        <div class="emotion-card"><label for="emo_panic">3. Panic / Pine</label><input type="file" id="emo_panic" accept="image/*"></div>
+        <div class="emotion-card"><label for="emo_static">4. Static</label><input type="file" id="emo_static" accept="image/*"></div>
+        <div class="emotion-card"><label for="emo_tired">5. Tired</label><input type="file" id="emo_tired" accept="image/*"></div>
+        <div class="emotion-card"><label for="emo_die">6. Die</label><input type="file" id="emo_die" accept="image/*"></div>
+      </div>
+    </div>
+
+    <!-- ADVANCED PANEL -->
+    <div id="builder-advanced-panel" style="margin-top: 10px; display: none;">
+      <label style="font-size:0.85rem; font-weight:bold; color:#00e676;" data-i18n="adv_frame_assign">Assign Image for each Frame in Plist:</label>
+      <div id="advanced-frames-list" class="emotion-grid" style="margin-top: 8px;">
+        <div style="font-size:0.8rem; color:#aaa; grid-column: 1 / -1;" data-i18n="load_plist_first">Load a .plist file above to view frame list.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button onclick="buildEmotionsSheet()" data-i18n="gen_sheet_btn">GENERATE SPRITESHEET</button>
+    </div>
+
+    <div id="builder-result-area"></div>
+  </div>
+
+  <!-- TOOL 4 -->
+  <div class="box">
+    <div class="box-title" data-i18n="t4_title">4. Visual Spritesheet Editor & Frame Replacer</div>
+    
+    <div class="file-group">
+      <label data-i18n="editor_plist">1. Archivo .Plist de Estructura (*Requerido):</label>
+      <input type="file" id="editorPlistFile" accept=".plist,.xml">
+    </div>
+    <div class="file-group">
+      <label data-i18n="editor_sheet">2. Imagen del Spritesheet (*Requerida):</label>
+      <input type="file" id="editorSheetFile" accept="image/*">
+    </div>
+
+    <div style="margin-top: 10px;">
+      <button class="btn-secondary" onclick="loadAndExtractEditorFrames()" data-i18n="extract_frames_btn">EXTRAER FRAMES VISUALES</button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <strong data-i18n="frames_editor_gallery">Galería de Frames Extraídos (Rotar o Reemplazar):</strong>
+      <div id="editor-gallery" style="margin-top:6px;"></div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button onclick="rebuildEditorSpritesheet()" data-i18n="rebuild_sheet_btn">RECONSTRUIR Y DESCARGAR SPRITESHEET</button>
+    </div>
+
+    <div id="editor-result-area"></div>
+  </div>
+
+  <!-- SHARED CANVAS EYE-DROPPER MODAL -->
+  <div id="picker-canvas-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:999; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+    <div style="color:#00e676; font-weight:bold; margin-bottom:8px;" data-i18n="click_pick_info">Click on the image to pick color:</div>
+    <div style="max-width:90vw; max-height:80vh; overflow:auto; border:1px solid #00e676;">
+      <canvas id="pickerCanvas" style="cursor:crosshair; display:block;"></canvas>
+    </div>
+    <button onclick="closeEyedropperModal()" style="width:auto; margin-top:12px; padding:8px 20px; background:#ff5252; color:#fff;">Cerrar / Close</button>
+  </div>
+
+  <script>
+    const i18n = {
+      en: {
+        t1_title: "1. Animated GIF Creator",
+        sheet_img_label: "1. Spritesheet Image (*Required):",
+        plist_opt_label: "2. Plist Data File (Optional - Maps Frame Names):",
+        fps_label: "Speed (FPS):",
+        upload_status: "Upload your .png or .webp file",
+        isolated_sprites: "Isolated Sprites:",
+        chosen_seq: "Chosen Sequence:",
+        clear_btn: "Clear",
+        download_gif_btn: "DOWNLOAD TRANSPARENT GIF",
+        t2_title: "2. Advanced Plist Texturizer",
+        plist_req: "1. SpriteSheet .Plist File (*Required):",
+        sheet_req: "2. Base Original Spritesheet (*Required):",
+        tex_req: "3. Custom Texture Image (*Required):",
+        faces_opt: "4. PNG Faces/Overlay Layer (Optional):",
+        tex_mode: "Texture Mode:",
+        mode_clip: "Pure Clipping (Silhouette Without Color Blend)",
+        mode_blend: "Overlay / Blend (With Fusion)",
+        mode_overlay: "Pure Overlay (Lights/Shadows Without Blend)",
+        mode_replace: "Total Replacement (Clears Base and Applies Texture)",
+        blend_mode: "Blend Mode:",
+        exclude_colors_title: "Color Exclusion (Protect from Texture):",
+        exclude_tol_label: "Exclusion Tolerance:",
+        recolor_tol_label: "Recolor Tolerance:",
+        pick_color_btn: "Pick Exclusion Color from Base Sheet",
+        click_pick_info: "Click on the image to pick color:",
+        recolor_title: "Palette Recolor (Boss / Sprite):",
+        add_recolor_btn: "+ Add Color Swap",
+        tol_label: "Face Protection Tolerance:",
+        apply_tex_btn: "APPLY TEXTURE TO SPRITESHEET",
+        t3_title: "3. Spritesheet Assembler by Plist",
+        struct_plist: "1. Structure .Plist File (*Required):",
+        base_sheet_opt: "2. Base / Background Spritesheet (Optional):",
+        tab_auto: "Auto (By Emotions)",
+        tab_adv: "Advanced (Frame by Frame)",
+        emo_files_label: "Emotion PNG Files:",
+        adv_frame_assign: "Assign Image for each Frame in Plist:",
+        load_plist_first: "Load a .plist file above to view frame list.",
+        gen_sheet_btn: "GENERATE SPRITESHEET",
+        t4_title: "4. Visual Spritesheet Editor & Frame Replacer",
+        editor_plist: "1. Structure .Plist File (*Required):",
+        editor_sheet: "2. Spritesheet Image (*Required):",
+        extract_frames_btn: "EXTRACT VISUAL FRAMES",
+        frames_editor_gallery: "Extracted Frames Gallery (Rotate or Replace):",
+        rebuild_sheet_btn: "REBUILD & DOWNLOAD SPRITESHEET",
+        from: "From:",
+        to: "To:"
+      },
+      es: {
+        t1_title: "1. Creador de GIF Animado",
+        sheet_img_label: "1. Imagen del Spritesheet (*Requerida):",
+        plist_opt_label: "2. Archivo .Plist (Opcional - Nombres de Frames):",
+        fps_label: "Velocidad (FPS):",
+        upload_status: "Sube tu archivo .png o .webp",
+        isolated_sprites: "Sprites aislados:",
+        chosen_seq: "Secuencia elegida:",
+        clear_btn: "Limpiar",
+        download_gif_btn: "DESCARGAR GIF TRANSPARENTE",
+        t2_title: "2. Texturizador Avanzado por Plist",
+        plist_req: "1. Archivo .Plist del SpriteSheet (*Requerido):",
+        sheet_req: "2. Spritesheet Original Base (*Requerido):",
+        tex_req: "3. Imagen de Textura Custom (*Requerida):",
+        faces_opt: "4. Capa de Caras/Contornos PNG (Opcional):",
+        tex_mode: "Modo de Textura:",
+        mode_clip: "Clipping Puro (Silueta Sin Mezcla de Color)",
+        mode_blend: "Superponer / Mezclar (Con Fusión)",
+        mode_overlay: "Overlay Puro (Sombras/Luces Sin Mezcla)",
+        mode_replace: "Reemplazo Total (Limpia Original y Pone Textura)",
+        blend_mode: "Modo de Fusión:",
+        exclude_colors_title: "Exclusión de Color (Proteger de Textura):",
+        exclude_tol_label: "Tolerancia de Exclusión:",
+        recolor_tol_label: "Tolerancia del Reemplazo de Color:",
+        pick_color_btn: "Seleccionar Color de Exclusión de la Imagen Base",
+        click_pick_info: "Haz clic en la imagen para elegir un color:",
+        recolor_title: "Recolorear Paleta (Jefe / Sprite):",
+        add_recolor_btn: "+ Añadir Cambio de Color",
+        tol_label: "Tolerancia de Protección de Caras:",
+        apply_tex_btn: "APLICAR TEXTURA A SPRITESHEET",
+        t3_title: "3. Ensamblador de Spritesheet por Plist",
+        struct_plist: "1. Archivo .Plist de Estructura (*Requerido):",
+        base_sheet_opt: "2. Spritesheet Base / Fondo (Opcional):",
+        tab_auto: "Auto (Por Emociones)",
+        tab_adv: "Avanzado (Frame por Frame)",
+        emo_files_label: "Archivos de Emociones PNG:",
+        adv_frame_assign: "Asignar Imagen por cada Frame del Plist:",
+        load_plist_first: "Carga un archivo .plist arriba para ver la lista de frames.",
+        gen_sheet_btn: "GENERAR SPRITESHEET",
+        t4_title: "4. Editor Visual y Reemplazador de Spritesheet",
+        editor_plist: "1. Archivo .Plist de Estructura (*Requerido):",
+        editor_sheet: "2. Imagen del Spritesheet (*Requerida):",
+        extract_frames_btn: "EXTRAER FRAMES VISUALES",
+        frames_editor_gallery: "Galería de Frames Extraídos (Rotar o Reemplazar):",
+        rebuild_sheet_btn: "RECONSTRUIR Y DESCARGAR SPRITESHEET",
+        from: "De:",
+        to: "A:"
+      }
+    };
+
+    let currentLang = 'en';
+
+    function changeLanguage(lang) {
+      currentLang = lang;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        let key = el.getAttribute('data-i18n');
+        if (i18n[lang][key]) {
+          el.innerText = i18n[lang][key];
+        }
+      });
+    }
+
+    // --- SHARED EYEDROPPER & RECOLOR SYSTEM ---
+    let baseImagesLoaded = { t2: null, t3: null };
+    let activeEyedropperTarget = null;
+
+    function loadBaseSheetForPicking(input, toolKey) {
+      let file = input.files[0];
+      if (!file) return;
+      let img = new Image();
+      img.onload = () => {
+        baseImagesLoaded[toolKey] = img;
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    function toggleEyedropper(type, inputTarget = null, toolKey = 't2') {
+      let activeImg = baseImagesLoaded[toolKey] || baseImagesLoaded['t2'] || baseImagesLoaded['t3'];
+      if (!activeImg) return alert("Upload a Base Spritesheet file first.");
+
+      activeEyedropperTarget = { type, inputTarget };
+
+      let canvas = document.getElementById('pickerCanvas');
+      canvas.width = activeImg.width;
+      canvas.height = activeImg.height;
+      let ctx = canvas.getContext('2d');
+      ctx.drawImage(activeImg, 0, 0);
+
+      document.getElementById('picker-canvas-modal').style.display = 'flex';
+    }
+
+    function closeEyedropperModal() {
+      document.getElementById('picker-canvas-modal').style.display = 'none';
+    }
+
+    document.getElementById('pickerCanvas').addEventListener('click', function(e) {
+      let rect = this.getBoundingClientRect();
+      let scaleX = this.width / rect.width;
+      let scaleY = this.height / rect.height;
+      let x = Math.floor((e.clientX - rect.left) * scaleX);
+      let y = Math.floor((e.clientY - rect.top) * scaleY);
+
+      let ctx = this.getContext('2d');
+      let p = ctx.getImageData(x, y, 1, 1).data;
+      if (p[3] < 20) return;
+
+      let hexColor = rgbToHex(p[0], p[1], p[2]);
+
+      if (activeEyedropperTarget.type === 'exclusion') {
+        excludedColors.push({ r: p[0], g: p[1], b: p[2] });
+        renderExcludedColors();
+      } else if (activeEyedropperTarget.type === 'recolor' && activeEyedropperTarget.inputTarget) {
+        activeEyedropperTarget.inputTarget.value = hexColor;
+      }
+
+      closeEyedropperModal();
+    });
+
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function addRecolorRow(containerId, toolKey) {
+      let container = document.getElementById(containerId);
+      let row = document.createElement('div');
+      row.className = 'recolor-row';
+      row.innerHTML = `
+        <span style="font-size:0.75rem;">${i18n[currentLang].from}</span>
+        <input type="color" class="recolor-from" value="#ff0000">
+        <button class="btn-eye" title="Pick from image">&#128065;</button>
+        <span style="font-size:0.75rem;">${i18n[currentLang].to}</span>
+        <input type="color" class="recolor-to" value="#00e676">
+        <button class="btn-del" onclick="this.parentElement.remove()">X</button>
+      `;
+
+      let eyeBtn = row.querySelector('.btn-eye');
+      let fromInput = row.querySelector('.recolor-from');
+      eyeBtn.onclick = () => toggleEyedropper('recolor', fromInput, toolKey);
+
+      container.appendChild(row);
+    }
+
+    function getRecolorRules(containerId) {
+      let rows = document.querySelectorAll(`#${containerId} .recolor-row`);
+      let rules = [];
+      rows.forEach(r => {
+        let fromHex = r.querySelector('.recolor-from').value;
+        let toHex = r.querySelector('.recolor-to').value;
+        rules.push({
+          from: hexToRgb(fromHex),
+          to: hexToRgb(toHex)
+        });
+      });
+      return rules;
+    }
+
+    function applyRecolorToCtx(ctx, width, height, rules, tolerance = 25) {
+      if (!rules || rules.length === 0) return;
+      let imgData = ctx.getImageData(0, 0, width, height);
+      let data = imgData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] < 20) continue;
+        let r = data[i], g = data[i+1], b = data[i+2];
+
+        for (let rule of rules) {
+          if (Math.abs(r - rule.from.r) <= tolerance && 
+              Math.abs(g - rule.from.g) <= tolerance && 
+              Math.abs(b - rule.from.b) <= tolerance) {
+            data[i] = rule.to.r;
+            data[i+1] = rule.to.g;
+            data[i+2] = rule.to.b;
+            break;
+          }
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function hexToRgb(hex) {
+      let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 0, g: 0, b: 0 };
+    }
+
+    let excludedColors = [];
+
+    function renderExcludedColors() {
+      let container = document.getElementById('excluded-colors-list');
+      container.innerHTML = "";
+      excludedColors.forEach((c, idx) => {
+        let swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.backgroundColor = `rgb(${c.r},${c.g},${c.b})`;
+        swatch.title = `RGB(${c.r},${c.g},${c.b}) - Click to remove`;
+        swatch.onclick = () => { excludedColors.splice(idx, 1); renderExcludedColors(); };
+        container.appendChild(swatch);
+      });
+    }
+
+    // --- TOOL 4 LOGIC: VISUAL EDITOR & REPLACER ---
+    let editorFramesData = [];
+
+    async function loadAndExtractEditorFrames() {
+      let plistFile = document.getElementById('editorPlistFile').files[0];
+      let sheetFile = document.getElementById('editorSheetFile').files[0];
+      if (!plistFile || !sheetFile) return alert("Suba ambos archivos (.plist e Imagen)");
+
+      document.getElementById('editor-result-area').innerText = "Extrayendo frames...";
+
+      let plistText = await plistFile.text();
+      let sheetImg = await loadImage(sheetFile);
+      let parsed = parsePlistFrames(plistText);
+      if (!parsed || parsed.length === 0) return alert("Plist no válido.");
+
+      editorFramesData = parsed;
+      let gallery = document.getElementById('editor-gallery');
+      gallery.innerHTML = "";
+
+      parsed.forEach((f, idx) => {
+        let cropW = f.rotated ? f.h : f.w;
+        let cropH = f.rotated ? f.w : f.h;
+
+        let frameCvs = document.createElement('canvas');
+        frameCvs.width = cropW;
+        frameCvs.height = cropH;
+        let ctx = frameCvs.getContext('2d');
+        ctx.drawImage(sheetImg, f.x, f.y, cropW, cropH, 0, 0, cropW, cropH);
+
+        f.currentCvs = frameCvs;
+
+        let card = document.createElement('div');
+        card.className = 'editor-card';
+
+        card.innerHTML = `
+          <div class="editor-card-title" title="${f.name}">${f.name}</div>
+          <div class="editor-card-canvas-box" id="editor-box-${idx}"></div>
+          <div class="editor-card-controls">
+            <button class="btn-secondary" style="font-size:0.65rem; padding:3px;" onclick="rotateEditorFrame(${idx})">&#8635; Rotar 90°</button>
+            <input type="file" accept="image/*" onchange="replaceEditorFrame(event, ${idx})">
+          </div>
+        `;
+
+        card.querySelector(`#editor-box-${idx}`).appendChild(frameCvs);
+        gallery.appendChild(card);
+      });
+
+      document.getElementById('editor-result-area').innerText = `¡${parsed.length} frames extraídos correctamente!`;
+    }
+
+    function rotateEditorFrame(idx) {
+      let f = editorFramesData[idx];
+      let oldCvs = f.currentCvs;
+      let newW = oldCvs.height;
+      let newH = oldCvs.width;
+
+      let newCvs = document.createElement('canvas');
+      newCvs.width = newW;
+      newCvs.height = newH;
+      let ctx = newCvs.getContext('2d');
+
+      ctx.translate(newW / 2, newH / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(oldCvs, -oldCvs.width / 2, -oldCvs.height / 2);
+
+      f.currentCvs = newCvs;
+
+      let box = document.getElementById(`editor-box-${idx}`);
+      box.innerHTML = "";
+      box.appendChild(newCvs);
+    }
+
+    async function replaceEditorFrame(event, idx) {
+      let file = event.target.files[0];
+      if (!file) return;
+      let newImg = await loadImage(file);
+
+      let f = editorFramesData[idx];
+      let cropW = f.rotated ? f.h : f.w;
+      let cropH = f.rotated ? f.w : f.h;
+
+      let newCvs = document.createElement('canvas');
+      newCvs.width = cropW;
+      newCvs.height = cropH;
+      let ctx = newCvs.getContext('2d');
+      ctx.drawImage(newImg, 0, 0, newImg.width, newImg.height, 0, 0, cropW, cropH);
+
+      f.currentCvs = newCvs;
+
+      let box = document.getElementById(`editor-box-${idx}`);
+      box.innerHTML = "";
+      box.appendChild(newCvs);
+    }
+
+    async function rebuildEditorSpritesheet() {
+      if (!editorFramesData || editorFramesData.length === 0) return alert("Extrae primero los frames.");
+
+      let sheetFile = document.getElementById('editorSheetFile').files[0];
+      let baseImg = await loadImage(sheetFile);
+
+      let canvas = document.createElement('canvas');
+      canvas.width = baseImg.width;
+      canvas.height = baseImg.height;
+      let ctx = canvas.getContext('2d');
+      ctx.drawImage(baseImg, 0, 0);
+
+      editorFramesData.forEach(f => {
+        let cropW = f.rotated ? f.h : f.w;
+        let cropH = f.rotated ? f.w : f.h;
+        ctx.clearRect(f.x, f.y, cropW, cropH);
+        ctx.drawImage(f.currentCvs, f.x, f.y);
+      });
+
+      let finalUrl = canvas.toDataURL("image/png");
+      document.getElementById('editor-result-area').innerHTML = `
+        <p style="color:#00e676; font-weight:bold; margin-top:10px;">¡Spritesheet Reconstruida!</p>
+        <img src="${finalUrl}" style="max-width:100%; max-height:280px; border:1px solid #00e676; background:#111;"><br><br>
+        <a href="${finalUrl}" download="spritesheet_reconstruida.png">
+          <button style="background:#00e676; color:#000;">DESCARGAR SPRITESHEET EDITADA (.PNG)</button>
+        </a>
+      `;
+    }
+
+    // --- TOOL 3 LOGIC ---
+    let activeBuilderMode = 'auto';
+    let currentParsedFrames = [];
+
+    function switchBuilderMode(mode) {
+      activeBuilderMode = mode;
+      document.getElementById('tab-auto').classList.toggle('active', mode === 'auto');
+      document.getElementById('tab-advanced').classList.toggle('active', mode === 'advanced');
+      document.getElementById('builder-auto-panel').style.display = (mode === 'auto') ? 'block' : 'none';
+      document.getElementById('builder-advanced-panel').style.display = (mode === 'advanced') ? 'block' : 'none';
+    }
+
+    async function handleBuilderPlistLoaded() {
+      let plistFile = document.getElementById('builderPlistFile').files[0];
+      if (!plistFile) return;
+      let plistText = await plistFile.text();
+      currentParsedFrames = parsePlistFrames(plistText) || [];
+
+      let container = document.getElementById('advanced-frames-list');
+      container.innerHTML = "";
+
+      if (currentParsedFrames.length === 0) {
+        container.innerHTML = `<div style="font-size:0.8rem; color:#ff5252; grid-column: 1 / -1;">No valid frames in .plist</div>`;
+        return;
+      }
+
+      currentParsedFrames.forEach((f, idx) => {
+        let card = document.createElement('div');
+        card.className = 'emotion-card';
+        card.innerHTML = `
+          <label title="${f.name}">${idx + 1}. ${f.name} <br>(${f.w}x${f.h}px)</label>
+          <input type="file" id="adv_frame_${idx}" accept="image/*">
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function toggleBlendOptions() {
+      let mode = document.getElementById('textureMode').value;
+      let blendBox = document.getElementById('blendModeContainer');
+      blendBox.style.display = (mode === 'blend') ? 'block' : 'none';
+    }
+
+    // --- GIF ENCODER ---
+    function GIFEncoder(){
+      var width, height, delay = 8;
+      var pixels, indexedPixels, colorTab;
+      var out = [];
+
+      this.setFPS = function(fps){
+        var f = Math.max(1, Math.min(30, parseInt(fps) || 12));
+        delay = Math.round(100 / f);
+      };
+
+      this.start = function(w, h){
+        width = w; height = h; out = [];
+        writeString("GIF89a"); writeShort(width); writeShort(height);
+        out.push(0x70, 0, 0);
+        out.push(0x21, 0xFF, 0x0B); writeString("NETSCAPE2.0");
+        out.push(0x03, 0x01, 0x00, 0x00, 0x00);
+      };
+
+      this.addFrame = function(ctx){
+        var imgData = ctx.getImageData(0, 0, width, height);
+        pixels = imgData.data;
+        getImagePixels();
+        out.push(0x21, 0xF9, 0x04, 0x09); writeShort(delay); out.push(0, 0);
+        out.push(0x2C); writeShort(0); writeShort(0); writeShort(width); writeShort(height);
+        out.push(0x87);
+        for(var i=0; i<256; i++){
+          if(i < colorTab.length){
+            var c = colorTab[i];
+            out.push((c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF);
+          } else { out.push(0,0,0); }
+        }
+        writePixels();
+      };
+
+      this.finish = function(){ out.push(0x3B); return new Uint8Array(out); };
+      function writeString(s){ for(var i=0; i<s.length; i++) out.push(s.charCodeAt(i)); }
+      function writeShort(v){ out.push(v & 0xFF, (v >> 8) & 0xFF); }
+
+      function getImagePixels(){
+        var nPix = width * height;
+        indexedPixels = new Uint8Array(nPix);
+        var colorCounts = {};
+        for(var i=0; i<nPix; i++){
+          if(pixels[i*4+3] >= 20){
+            var r = pixels[i*4] & 0xF0, g = pixels[i*4+1] & 0xF0, b = pixels[i*4+2] & 0xF0;
+            var key = (r << 16) | (g << 8) | b;
+            colorCounts[key] = (colorCounts[key] || 0) + 1;
+          }
+        }
+        var sortedColors = Object.keys(colorCounts).map(Number).sort((a,b) => colorCounts[b] - colorCounts[a]);
+        colorTab = [0xFF00FF];
+        for(var i=0; i<sortedColors.length; i++){
+          if(colorTab.length < 256){
+            var c = sortedColors[i];
+            if(c === 0xFF00FF) c = 0xF000F0;
+            colorTab.push(c);
+          } else break;
+        }
+        for(var i=0; i<nPix; i++){
+          var a = pixels[i*4+3];
+          if(a < 20) indexedPixels[i] = 0;
+          else {
+            var r = pixels[i*4] & 0xF0, g = pixels[i*4+1] & 0xF0, b = pixels[i*4+2] & 0xF0;
+            var rgb = (r << 16) | (g << 8) | b;
+            if(rgb === 0xFF00FF) rgb = 0xF000F0;
+            var idx = colorTab.indexOf(rgb);
+            if(idx === -1) idx = getClosestColor(r, g, b);
+            indexedPixels[i] = idx;
+          }
+        }
+      }
+
+      function getClosestColor(r, g, b){
+        var minD = 999999, bestIdx = 1;
+        for(var i=1; i<colorTab.length; i++){
+          var c = colorTab[i];
+          var cr = (c >> 16) & 0xFF, cg = (c >> 8) & 0xFF, cb = c & 0xFF;
+          var d = (r-cr)*(r-cr) + (g-cg)*(g-cg) + (b-cb)*(b-cb);
+          if(d < minD){ minD = d; bestIdx = i; }
+        }
+        return bestIdx;
+      }
+
+      function writePixels(){
+        out.push(8);
+        var LZW = new LZWEncoder(width, height, indexedPixels, 8);
+        LZW.encode(out);
+        out.push(0);
+      }
+
+      function LZWEncoder(w, h, pix, depth) {
+        var initCodeSize = depth, accum = new Uint8Array(256), a_count = 0;
+        function char_out(c, outs) { accum[a_count++] = c; if (a_count >= 254) flush_char(outs); }
+        function flush_char(outs) { if (a_count > 0) { outs.push(a_count); for(var i=0; i<a_count; i++) outs.push(accum[i]); a_count = 0; } }
+        this.encode = function(outs) {
+          var n_bits = initCodeSize + 1, maxcode = (1 << n_bits) - 1, clear_flg = false;
+          var ClearCode = (1 << initCodeSize), EOFCode = ClearCode + 1, free_ent = ClearCode + 2;
+          var htab = new Int32Array(5003), codetab = new Int32Array(5003), cur_accum = 0, cur_bits = 0;
+          function output(code) {
+            cur_accum &= (1 << cur_bits) - 1;
+            if (cur_bits > 0) cur_accum |= (code << cur_bits); else cur_accum = code;
+            cur_bits += n_bits;
+            while (cur_bits >= 8) { char_out(cur_accum & 0xff, outs); cur_accum >>= 8; cur_bits -= 8; }
+            if (free_ent > maxcode || clear_flg) {
+              if (clear_flg) { n_bits = initCodeSize + 1; maxcode = (1 << n_bits) - 1; clear_flg = false; }
+              else { n_bits++; maxcode = (n_bits == 12) ? (1 << n_bits) : ((1 << n_bits) - 1); }
+            }
+            if (code == EOFCode) { while (cur_bits > 0) { char_out(cur_accum & 0xff, outs); cur_accum >>= 8; cur_bits -= 8; } flush_char(outs); }
+          }
+          for (var i = 0; i < 5003; i++) htab[i] = -1;
+          output(ClearCode);
+          var ent = pix[0], idx = 1, len = pix.length;
+          while (idx < len) {
+            var c = pix[idx++], fcode = (c << 12) + ent, i = (c << 4) ^ ent;
+            if (htab[i] === fcode) { ent = codetab[i]; continue; }
+            if (htab[i] >= 0) {
+              var disp = 5003 - i; if (i === 0) disp = 1;
+              do { if ((i -= disp) < 0) i += 5003; if (htab[i] === fcode) { ent = codetab[i]; fcode = -1; break; } } while (htab[i] >= 0);
+            }
+            if (fcode === -1) continue;
+            output(ent); ent = c;
+            if (free_ent < (1 << 12)) { codetab[i] = free_ent++; htab[i] = fcode; }
+            else { for (var j = 0; j < 5003; j++) htab[j] = -1; free_ent = ClearCode + 2; clear_flg = true; output(ClearCode); }
+          }
+          output(ent); output(EOFCode);
+        };
+      }
+    }
+
+    // --- TOOL 1 LOGIC ---
+    let imgObj = null, sprites = [], selected = [], t1PlistFrames = null;
+
+    document.getElementById('up').onchange = (e) => {
+      let file = e.target.files[0]; if (!file) return;
+      document.getElementById('status').innerText = "Processing...";
+      let img = new Image();
+      img.onload = () => { imgObj = img; processTool1Extraction(); };
+      img.src = URL.createObjectURL(file);
+    };
+
+    async function handleT1PlistLoaded() {
+      let file = document.getElementById('t1Plist').files[0];
+      if (!file) return;
+      let text = await file.text();
+      t1PlistFrames = parsePlistFrames(text);
+      if (imgObj) processTool1Extraction();
+    }
+
+    function processTool1Extraction() {
+      if (!imgObj) return;
+
+      if (t1PlistFrames && t1PlistFrames.length > 0) {
+        extractTool1ViaPlist();
+      } else {
+        detectSprites();
+      }
+    }
+
+    function extractTool1ViaPlist() {
+      sprites = []; clearAll();
+      let gallery = document.getElementById('gallery'); gallery.innerHTML = "";
+
+      t1PlistFrames.forEach(f => {
+        let cropW = f.rotated ? f.h : f.w;
+        let cropH = f.rotated ? f.w : f.h;
+
+        let sc = document.createElement('canvas'); sc.width = cropW; sc.height = cropH;
+        let ctx = sc.getContext('2d');
+        ctx.drawImage(imgObj, f.x, f.y, cropW, cropH, 0, 0, cropW, cropH);
+
+        let sprite = { id: sprites.length, name: f.name, x: f.x, y: f.y, w: cropW, h: cropH, cvs: sc };
+        sprites.push(sprite);
+
+        renderSpriteCard(sprite, gallery);
+      });
+
+      document.getElementById('status').innerText = `Done! ${sprites.length} frames extracted via Plist.`;
+    }
+
+    function detectSprites() {
+      sprites = []; clearAll();
+      let gallery = document.getElementById('gallery'); gallery.innerHTML = "";
+      let cvs = document.createElement('canvas'); cvs.width = imgObj.width; cvs.height = imgObj.height;
+      let ctx = cvs.getContext('2d'); ctx.drawImage(imgObj, 0, 0);
+      let w = cvs.width, h = cvs.height, data = ctx.getImageData(0, 0, w, h).data, visited = new Uint8Array(w * h);
+
+      for (let y = 0; y < h; y += 1) {
+        for (let x = 0; x < w; x += 1) {
+          let idx = y * w + x;
+          if (data[idx * 4 + 3] > 20 && !visited[idx]) {
+            let minX = x, maxX = x, minY = y, maxY = y, queue = [[x, y]]; visited[idx] = 1;
+            while (queue.length > 0) {
+              let [cx, cy] = queue.pop();
+              if (cx < minX) minX = cx; if (cx > maxX) maxX = cx;
+              if (cy < minY) minY = cy; if (cy > maxY) maxY = cy;
+              let check = [[cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1]];
+              for (let [nx, ny] of check) {
+                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                  let nIdx = ny * w + nx;
+                  if (!visited[nIdx] && data[nIdx * 4 + 3] > 20) { visited[nIdx] = 1; queue.push([nx, ny]); }
+                }
+              }
+            }
+            let sw = maxX - minX + 1, sh = maxY - minY + 1;
+            if (sw >= 6 && sh >= 6) {
+              let sc = document.createElement('canvas'); sc.width = sw; sc.height = sh;
+              sc.getContext('2d').drawImage(imgObj, minX, minY, sw, sh, 0, 0, sw, sh);
+              let sprite = { id: sprites.length, name: `Frame ${sprites.length + 1}`, x: minX, y: minY, w: sw, h: sh, cvs: sc };
+              sprites.push(sprite);
+
+              renderSpriteCard(sprite, gallery);
+            }
+          }
+        }
+      }
+      document.getElementById('status').innerText = `Done! ${sprites.length} sprites isolated.`;
+    }
+
+    function renderSpriteCard(sprite, gallery) {
+      let card = document.createElement('div'); card.className = 'card'; 
+      let rotateBtn = document.createElement('div'); rotateBtn.className = 'btn-rotate';
+      rotateBtn.innerHTML = '&#8635;';
+      rotateBtn.onclick = (e) => { e.stopPropagation(); rotateSpriteReal(sprite); };
+
+      let canvasBox = document.createElement('div');
+      canvasBox.className = 'card-canvas-box';
+      canvasBox.appendChild(sprite.cvs);
+
+      let nameLabel = document.createElement('div');
+      nameLabel.className = 'card-name';
+      nameLabel.innerText = sprite.name || `Frame ${sprite.id + 1}`;
+      nameLabel.title = sprite.name || `Frame ${sprite.id + 1}`;
+
+      card.appendChild(rotateBtn);
+      card.appendChild(canvasBox);
+      card.appendChild(nameLabel);
+
+      card.onclick = () => addToSeq(sprite, card);
+      gallery.appendChild(card);
+    }
+
+    function rotateSpriteReal(sprite) {
+      let oldCvs = sprite.cvs;
+      let newW = oldCvs.height, newH = oldCvs.width;
+      let newCvs = document.createElement('canvas');
+      newCvs.width = newW; newCvs.height = newH;
+      let ctx = newCvs.getContext('2d');
+      ctx.translate(newW / 2, newH / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.drawImage(oldCvs, -oldCvs.width / 2, -oldCvs.height / 2);
+      sprite.cvs = newCvs; sprite.w = newW; sprite.h = newH;
+      let parentBox = oldCvs.parentElement;
+      if (parentBox) parentBox.replaceChild(newCvs, oldCvs);
+    }
+
+    function addToSeq(sprite, card) {
+      selected.push(sprite);
+      let badge = card.querySelector('.badge');
+      if (!badge) {
+        badge = document.createElement('div'); badge.className = 'badge'; card.appendChild(badge); 
+      }
+      badge.innerText = selected.filter(s => s === sprite).length;
+      card.classList.add('selected');
+
+      let item = document.createElement('div');
+      item.className = 'seq-item';
+
+      let p = document.createElement('canvas'); p.width = sprite.w; p.height = sprite.h;
+      p.getContext('2d').drawImage(sprite.cvs, 0, 0);
+
+      let txt = document.createElement('span');
+      txt.innerText = sprite.name || `Frame ${sprite.id + 1}`;
+      txt.title = sprite.name || `Frame ${sprite.id + 1}`;
+
+      item.appendChild(p);
+      item.appendChild(txt);
+      document.getElementById('seq').appendChild(item);
+    }
+
+    function clearAll() {
+      selected = []; document.getElementById('seq').innerHTML = ""; document.getElementById('result').innerHTML = "";
+      document.querySelectorAll('.card').forEach(c => { c.classList.remove('selected'); let b = c.querySelector('.badge'); if (b) b.remove(); });
+    }
+
+    function generateValidGIF() {
+      if (selected.length === 0) return alert("Select sprites first");
+      document.getElementById('result').innerText = "Creating GIF...";
+      setTimeout(() => {
+        let maxW = Math.max(...selected.map(s => s.w)), maxH = Math.max(...selected.map(s => s.h));
+        let userFps = document.getElementById('fpsInput').value;
+        let encoder = new GIFEncoder(); encoder.setFPS(userFps); encoder.start(maxW, maxH);
+        selected.forEach(s => {
+          let fc = document.createElement('canvas'); fc.width = maxW; fc.height = maxH;
+          let fctx = fc.getContext('2d');
+          fctx.drawImage(s.cvs, Math.floor((maxW - s.w) / 2), Math.floor((maxH - s.h) / 2));
+          encoder.addFrame(fctx);
+        });
+        let blob = new Blob([encoder.finish()], { type: 'image/gif' });
+        let url = URL.createObjectURL(blob);
+        document.getElementById('result').innerHTML = `
+          <p style="color:#00e676; margin-bottom: 5px; font-weight:bold;">GIF Ready (${userFps} FPS)!</p>
+          <img src="${url}" style="max-width:140px; border: 2px dashed #00e676; background: #222;"><br><br>
+          <a href="${url}" download="animacion.gif"><button>DOWNLOAD GIF</button></a>`;
+      }, 50);
+    }
+
+    // --- COLOR PROTECTION & PLIST PARSER ---
+    function findDominantSkinColor(ctx, width, height) {
+      let data = ctx.getImageData(0, 0, width, height).data;
+      let colorCounts = {};
+      for (let i = 0; i < data.length; i += 16) {
+        let a = data[i + 3];
+        if (a > 100) {
+          let r = data[i], g = data[i+1], b = data[i+2];
+          let brightness = (r + g + b) / 3;
+          if (brightness > 40 && brightness < 220) {
+            let key = `${Math.round(r / 15) * 15},${Math.round(g / 15) * 15},${Math.round(b / 15) * 15}`;
+            colorCounts[key] = (colorCounts[key] || 0) + 1;
+          }
+        }
+      }
+      let dominant = "128,128,128", maxCount = 0;
+      for (let key in colorCounts) {
+        if (colorCounts[key] > maxCount) {
+          maxCount = colorCounts[key];
+          dominant = key;
+        }
+      }
+      let [dr, dg, db] = dominant.split(',').map(Number);
+      return { r: dr, g: dg, b: db };
+    }
+
+    function isFacialDetailOrBorder(r, g, b, a, domColor, tolerancePercent, exclusionTolerance = 25) {
+      if (a < 20) return false;
+
+      for (let exc of excludedColors) {
+        if (Math.abs(r - exc.r) <= exclusionTolerance && 
+            Math.abs(g - exc.g) <= exclusionTolerance && 
+            Math.abs(b - exc.b) <= exclusionTolerance) {
+          return true;
+        }
+      }
+
+      if (r <= 15 && g <= 15 && b <= 15) return true;
+      let brightness = (r + g + b) / 3;
+      if (brightness < 30 + (tolerancePercent * 0.4)) return true;
+      if (brightness > 240 - (tolerancePercent * 0.5)) return true;
+
+      let distFromDominant = (Math.abs(r - domColor.r) + Math.abs(g - domColor.g) + Math.abs(b - domColor.b)) / 3;
+      return distFromDominant > (60 - (tolerancePercent * 0.45));
+    }
+
+    function parsePlistFrames(plistText) {
+      let parser = new DOMParser();
+      let xmlDoc = parser.parseFromString(plistText, "text/xml");
+      let keys = xmlDoc.getElementsByTagName("key");
+      let framesDataNode = null;
+      for (let i = 0; i < keys.length; i++) {
+        if (keys[i].textContent === "frames") {
+          framesDataNode = keys[i].nextElementSibling;
+          break;
+        }
+      }
+      if (!framesDataNode) return null;
+
+      let frameDicts = framesDataNode.children;
+      let parsedFrames = [];
+
+      function parseRect(str) {
+        let nums = str.match(/-?\d+/g).map(Number);
+        return { x: nums[0], y: nums[1], w: nums[2], h: nums[3] };
+      }
+
+      for (let i = 0; i < frameDicts.length; i += 2) {
+        let frameName = frameDicts[i].textContent;
+        let innerDict = frameDicts[i+1];
+        let innerKeys = innerDict.getElementsByTagName("key");
+        
+        let rectStr = "", rotated = false;
+        for (let k = 0; k < innerKeys.length; k++) {
+          let kName = innerKeys[k].textContent;
+          if (kName === "frame" || kName === "textureRect") {
+            rectStr = innerKeys[k].nextElementSibling.textContent;
+          }
+          if (kName === "rotated" || kName === "textureRotated") {
+            rotated = innerKeys[k].nextElementSibling.tagName === "true";
+          }
+        }
+
+        if (rectStr) {
+          let rect = parseRect(rectStr);
+          parsedFrames.push({ name: frameName, x: rect.x, y: rect.y, w: rect.w, h: rect.h, rotated: rotated });
+        }
+      }
+      return parsedFrames;
+    }
+
+    // --- TOOL 2 PROCESS ---
+    async function applySmartTextureWithPlist() {
+      let plistFile = document.getElementById('plistFile').files[0];
+      let sheetFile = document.getElementById('maskSheetImg').files[0];
+      let texFile = document.getElementById('maskTextureImg').files[0];
+      let facesFile = document.getElementById('facesOverlayImg').files[0];
+      
+      let textureMode = document.getElementById('textureMode').value;
+      let blendMode = document.getElementById('blendMode').value;
+      let toleranceVal = parseInt(document.getElementById('toleranceRange').value);
+      let exclusionTolVal = parseInt(document.getElementById('exclusionTolRange').value);
+      let recolorTolVal = parseInt(document.getElementById('recolorTolT2Range').value);
+
+      if (!plistFile || !sheetFile || !texFile) {
+        return alert("Please upload required files: .plist, base sheet .png, and texture .png.");
+      }
+
+      document.getElementById('mask-result-area').innerText = "Processing Texture and Color Swaps...";
+
+      let plistText = await plistFile.text();
+      let sheetImg = await loadImage(sheetFile);
+      let texImg = await loadImage(texFile);
+      let facesImg = facesFile ? await loadImage(facesFile) : null;
+
+      let dummyCanvas = document.createElement('canvas');
+      dummyCanvas.width = sheetImg.width; dummyCanvas.height = sheetImg.height;
+      let dummyCtx = dummyCanvas.getContext('2d');
+      dummyCtx.drawImage(sheetImg, 0, 0);
+      let dominantColor = findDominantSkinColor(dummyCtx, sheetImg.width, sheetImg.height);
+
+      let parsedFrames = parsePlistFrames(plistText);
+      if (!parsedFrames || parsedFrames.length === 0) return alert("Could not parse .plist frames");
+
+      let finalCanvas = document.createElement('canvas');
+      finalCanvas.width = sheetImg.width;
+      finalCanvas.height = sheetImg.height;
+      let finalCtx = finalCanvas.getContext('2d');
+
+      if (textureMode !== 'replace') {
+        finalCtx.drawImage(sheetImg, 0, 0);
+      }
+
+      parsedFrames.forEach(f => {
+        let cropW = f.rotated ? f.h : f.w;
+        let cropH = f.rotated ? f.w : f.h;
+
+        let subCvs = document.createElement('canvas');
+        subCvs.width = cropW; subCvs.height = cropH;
+        let subCtx = subCvs.getContext('2d');
+        subCtx.drawImage(sheetImg, f.x, f.y, cropW, cropH, 0, 0, cropW, cropH);
+
+        let texCvs = document.createElement('canvas');
+        texCvs.width = cropW; texCvs.height = cropH;
+        let tCtx = texCvs.getContext('2d');
+
+        if (f.rotated) {
+          tCtx.save(); tCtx.translate(cropW, 0); tCtx.rotate(Math.PI / 2);
+          tCtx.drawImage(texImg, 0, 0, texImg.width, texImg.height, 0, 0, cropH, cropW);
+          tCtx.restore();
+        } else {
+          tCtx.drawImage(texImg, 0, 0, texImg.width, texImg.height, 0, 0, cropW, cropH);
+        }
+
+        if (textureMode === 'blend') {
+          tCtx.globalCompositeOperation = blendMode;
+          tCtx.drawImage(subCvs, 0, 0);
+          tCtx.globalCompositeOperation = 'destination-in';
+          tCtx.drawImage(subCvs, 0, 0);
+        } else if (textureMode === 'overlay_pure') {
+          let origData = subCtx.getImageData(0, 0, cropW, cropH);
+          let texData = tCtx.getImageData(0, 0, cropW, cropH);
+          let oPixels = origData.data, tPixels = texData.data;
+
+          for (let i = 0; i < oPixels.length; i += 4) {
+            let oa = oPixels[i+3];
+            if (oa < 20) { tPixels[i+3] = 0; } 
+            else {
+              let luma = (oPixels[i] * 0.299 + oPixels[i+1] * 0.587 + oPixels[i+2] * 0.114) / 255;
+              let factor = luma < 0.5 ? (2 * luma) : (2 * (1 - luma));
+              tPixels[i] = Math.min(255, Math.max(0, tPixels[i] * factor));
+              tPixels[i+1] = Math.min(255, Math.max(0, tPixels[i+1] * factor));
+              tPixels[i+2] = Math.min(255, Math.max(0, tPixels[i+2] * factor));
+              tPixels[i+3] = oa;
+            }
+          }
+          tCtx.putImageData(texData, 0, 0);
+        } else if (textureMode === 'clip') {
+          tCtx.globalCompositeOperation = 'destination-in';
+          tCtx.drawImage(subCvs, 0, 0);
+        } else if (textureMode === 'replace') {
+          finalCtx.clearRect(f.x, f.y, cropW, cropH);
+        }
+
+        if (facesImg) {
+          let facesCvs = document.createElement('canvas');
+          facesCvs.width = cropW; facesCvs.height = cropH;
+          let fCtx = facesCvs.getContext('2d');
+          fCtx.drawImage(facesImg, f.x, f.y, cropW, cropH, 0, 0, cropW, cropH);
+          tCtx.globalCompositeOperation = 'source-over';
+          tCtx.drawImage(facesCvs, 0, 0);
+        } else if (textureMode !== 'replace') {
+          let origData = subCtx.getImageData(0, 0, cropW, cropH);
+          let texData = tCtx.getImageData(0, 0, cropW, cropH);
+          let oPixels = origData.data, tPixels = texData.data;
+
+          for (let i = 0; i < oPixels.length; i += 4) {
+            let r = oPixels[i], g = oPixels[i+1], b = oPixels[i+2], a = oPixels[i+3];
+            if (isFacialDetailOrBorder(r, g, b, a, dominantColor, toleranceVal, exclusionTolVal)) {
+              tPixels[i] = r; tPixels[i+1] = g; tPixels[i+2] = b; tPixels[i+3] = a;
+            }
+          }
+          tCtx.putImageData(texData, 0, 0);
+        }
+
+        finalCtx.drawImage(texCvs, f.x, f.y);
+      });
+
+      let recolorRules = getRecolorRules('recolor-container-t2');
+      applyRecolorToCtx(finalCtx, finalCanvas.width, finalCanvas.height, recolorRules, recolorTolVal);
+
+      let finalUrl = finalCanvas.toDataURL("image/png");
+      document.getElementById('mask-result-area').innerHTML = `
+        <p style="color:#00e676; font-weight:bold; margin-top:10px;">Texture & Recolor Applied Successfully!</p>
+        <img src="${finalUrl}" style="max-width:100%; max-height:280px; border:1px solid #00e676; background:#111;"><br><br>
+        <a href="${finalUrl}" download="spritesheet_mod.png">
+          <button style="background:#00e676; color:#000;">DOWNLOAD SPRITESHEET (.PNG)</button>
+        </a>
+      `;
+    }
+
+    // --- TOOL 3 PROCESS ---
+    async function buildEmotionsSheet() {
+      let plistFile = document.getElementById('builderPlistFile').files[0];
+      if (!plistFile) return alert("Please select a .plist file.");
+
+      document.getElementById('builder-result-area').innerText = "Building Sheet...";
+
+      let plistText = await plistFile.text();
+      let parsedFrames = parsePlistFrames(plistText);
+      if (!parsedFrames || parsedFrames.length === 0) return alert("Invalid .plist file.");
+
+      let baseSheetFile = document.getElementById('builderBaseSheet').files[0];
+      let baseImg = baseSheetFile ? await loadImage(baseSheetFile) : null;
+
+      let maxCanvasW = 0, maxCanvasH = 0;
+      parsedFrames.forEach(f => {
+        let rightEdge = f.x + (f.rotated ? f.h : f.w);
+        let bottomEdge = f.y + (f.rotated ? f.w : f.h);
+        if (rightEdge > maxCanvasW) maxCanvasW = rightEdge;
+        if (bottomEdge > maxCanvasH) maxCanvasH = bottomEdge;
+      });
+
+      if (baseImg) {
+        maxCanvasW = Math.max(maxCanvasW, baseImg.width);
+        maxCanvasH = Math.max(maxCanvasH, baseImg.height);
+      }
+
+      let canvas = document.createElement('canvas');
+      canvas.width = maxCanvasW; canvas.height = maxCanvasH;
+      let ctx = canvas.getContext('2d');
+
+      if (baseImg) {
+        ctx.drawImage(baseImg, 0, 0);
+      }
+
+      let matchesFound = 0;
+
+      if (activeBuilderMode === 'auto') {
+        let emoFiles = {
+          base: document.getElementById('emo_base').files[0],
+          angry: document.getElementById('emo_angry').files[0],
+          panic: document.getElementById('emo_panic').files[0],
+          static: document.getElementById('emo_static').files[0],
+          tired: document.getElementById('emo_tired').files[0],
+          die: document.getElementById('emo_die').files[0]
+        };
+
+        let emoImgs = {};
+        for (let key in emoFiles) {
+          if (emoFiles[key]) emoImgs[key] = await loadImage(emoFiles[key]);
+        }
+
+        parsedFrames.forEach(f => {
+          let fname = f.name.toLowerCase();
+          let targetImg = null;
+
+          if (fname.includes('angry')) targetImg = emoImgs.angry;
+          else if (fname.includes('panic') || fname.includes('pine')) targetImg = emoImgs.panic;
+          else if (fname.includes('static')) targetImg = emoImgs.static;
+          else if (fname.includes('tired')) targetImg = emoImgs.tired;
+          else if (fname.includes('die') || fname.includes('dead')) targetImg = emoImgs.die;
+          else if (fname.includes('base') || fname.includes('normal') || fname.includes('idle')) targetImg = emoImgs.base;
+
+          if (targetImg) {
+            matchesFound++;
+            drawFrameToCanvas(ctx, targetImg, f, !baseImg);
+          }
+        });
+      } else {
+        for (let i = 0; i < parsedFrames.length; i++) {
+          let input = document.getElementById(`adv_frame_${i}`);
+          if (input && input.files[0]) {
+            let img = await loadImage(input.files[0]);
+            matchesFound++;
+            drawFrameToCanvas(ctx, img, parsedFrames[i], !baseImg);
+          }
+        }
+      }
+
+      let recolorRules = getRecolorRules('recolor-container-t3');
+      let recolorTolVal = parseInt(document.getElementById('recolorTolT3Range').value);
+      applyRecolorToCtx(ctx, canvas.width, canvas.height, recolorRules, recolorTolVal);
+
+      let resultUrl = canvas.toDataURL("image/png");
+      document.getElementById('builder-result-area').innerHTML = `
+        <p style="color:#00e676; font-weight:bold; margin-top:10px;">Spritesheet Generated (${matchesFound} frames rendered)!</p>
+        <img src="${resultUrl}" style="max-width:100%; max-height:280px; border:1px solid #00e676; background:#111;"><br><br>
+        <a href="${resultUrl}" download="spritesheet_armada.png">
+          <button style="background:#00e676; color:#000;">DOWNLOAD SPRITESHEET (.PNG)</button>
+        </a>
+      `;
+    }
+
+    function drawFrameToCanvas(ctx, targetImg, f, clearFirst) {
+      let targetW = f.rotated ? f.h : f.w;
+      let targetH = f.rotated ? f.w : f.h;
+      if (clearFirst) ctx.clearRect(f.x, f.y, targetW, targetH);
+
+      if (f.rotated) {
+        ctx.save();
+        ctx.translate(f.x + targetW, f.y);
+        ctx.rotate(Math.PI / 2);
+        ctx.drawImage(targetImg, 0, 0, targetImg.width, targetImg.height, 0, 0, targetH, targetW);
+        ctx.restore();
+      } else {
+        ctx.drawImage(targetImg, 0, 0, targetImg.width, targetImg.height, f.x, f.y, targetW, targetH);
+      }
+    }
+
+    function loadImage(file) {
+      return new Promise((resolve) => {
+        let img = new Image();
+        img.onload = () => resolve(img);
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    changeLanguage('en');
+  </script>
+</body>
+</html>
